@@ -19,6 +19,7 @@ import { processInputSignatures, Sighash, SigInfo, SighashLabels, parseTaproot }
 import { ActivatedRoute } from '@angular/router';
 import { SighashFlag } from '@app/shared/transaction.utils';
 import { CISA_SCRIPT_TYPE, CisaRoleLabels, parseCisa } from '@app/shared/cisa.utils';
+import { PayjoinOwnership } from '@app/shared/payjoin-ownership';
 
 @Component({
   selector: 'app-transactions-list',
@@ -41,6 +42,7 @@ export class TransactionsListComponent implements OnInit, OnChanges, OnDestroy {
   @Input() paginated = false;
   @Input() inputIndex: number;
   @Input() outputIndex: number;
+  @Input() payjoinOwnership: PayjoinOwnership | null = null;
   @Input() addresses: string[] = [];
   @Input() acceleratedTxids: Set<string> | null = null;
   @Input() rowLimit = 12;
