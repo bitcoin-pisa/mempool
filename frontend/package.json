@@ -38,7 +38,7 @@
     "sync-assets": "npm run copy-themes && rsync -av ./src/resources ./dist/mempool/browser && node sync-assets.js 'dist/mempool/browser/resources/'",
     "sync-assets-dev": "node sync-assets.js 'src/resources/'",
     "generate-config": "node generate-config.js",
-    "test": "npm run ng -- test",
+    "test": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' src/app/shared/payjoin-ownership.spec.ts",
     "lint": "./node_modules/.bin/eslint . --ext .ts",
     "lint:fix": "./node_modules/.bin/eslint . --ext .ts --fix",
     "prettier": "prettier --write \"src/app/**/*.{js,json,css,scss,less,md,ts,html,component.html}\"",
