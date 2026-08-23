@@ -12,6 +12,7 @@ import { StateService } from '@app/services/state.service';
 })
 export class TxFeaturesComponent implements OnChanges {
   @Input() tx: Transaction;
+  @Input() isPayjoin = false;
 
   segwitGains = {
     realizedSegwitGains: 0,

@@ -28,3 +28,7 @@
 <span *ngIf="isRbfTransaction; else rbfDisabled" class="badge bg-success" i18n-ngbTooltip="RBF tooltip" ngbTooltip="This transaction supports Replace-By-Fee (RBF) allowing fee bumping" placement="bottom" i18n="tx-features.tag.rbf|RBF">RBF</span>
 <ng-template #rbfDisabled><span class="badge bg-danger me-1" i18n-ngbTooltip="RBF disabled tooltip" ngbTooltip="This transaction does NOT support Replace-By-Fee (RBF) and cannot be fee bumped using this method" placement="bottom"><del i18n="tx-features.tag.rbf|RBF">RBF</del></span></ng-template>
 </ng-template>
+
+<ng-template [ngIf]="isPayjoin">
+<span class="badge bg-success ms-1" i18n-ngbTooltip="Payjoin tooltip" ngbTooltip="This transaction is a payjoin. The actual amount received may be different from what you see on the blockchain." placement="bottom" i18n="tx-features.tag.payjoin|Payjoin">Payjoin</span>
+</ng-template>
