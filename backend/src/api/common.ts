@@ -186,6 +186,36 @@ export class Common {
     return flags;
   }
 
+  /**
+   * Sighash flags of a BIP 460 key path spend.
+   *
+   * The single witness element carries the input's share of the group's
+   * signature data, an optional sighash byte, and on the group's final input a
+   * marker byte (0xbc half aggregation, 0xbd full aggregation) after it. Which
+   * of those bytes is present follows from the element's length alone, so the
+   * sighash type is read from the byte in front of the marker, or from the
+   * last byte when there is no marker. An element without a sighash byte
+   * means SIGHASH_DEFAULT. Lengths below are in hex characters.
+   */
+  static setCisaSighashFlags(flags: bigint, witness: string[]): bigint {
+    if (!witness?.length) {
+      return flags;
+    }
+    const element = witness[0];
+    const marker = element.slice(-2);
+    const isFinal = (element.length === 130 || element.length === 132) && (marker === 'bc' || marker === 'bd');
+    const signed = isFinal ? element.slice(0, -2) : element;
+    // 0: full-agg member, 64: half-agg member, 128: opted-out or final signature
+    if ([0, 64, 128].includes(signed.length)) {
+      return flags | TransactionFlags.sighash_default;
+    }
+    // 2, 66, 130: the same forms with an explicit sighash byte at the end
+    if ([2, 66, 130].includes(signed.length)) {
+      return flags | this.setSighashFlags(flags, signed);
+    }
+    return flags;
+  }
+
   static isDERSig(w: string): boolean {
     // heuristic to detect probable DER signatures
     return (w.length >= 18
@@ -664,6 +694,15 @@ export class Common {
               }
             }
           } break;
+          case 'v2_p2cisa': {
+            flags |= TransactionFlags.p2cisa;
+            if (vin.witness?.length) {
+              const hasAnnex = vin.witness.length > 1 && vin.witness[vin.witness.length - 1].startsWith('50');
+              if (hasAnnex) {
+                flags |= TransactionFlags.annex;
+              }
+            }
+          } break;
         }
       } else {
         // no prevouts, optimistically check witness-bearing inputs
@@ -680,6 +719,8 @@ export class Common {
       // sighash flags
       if (vin.prevout?.scriptpubkey_type === 'v1_p2tr') {
         flags |= this.setSchnorrSighashFlags(flags, vin.witness);
+      } else if (vin.prevout?.scriptpubkey_type === 'v2_p2cisa') {
+        flags |= this.setCisaSighashFlags(flags, vin.witness);
       } else if (vin.witness) {
         flags |= this.setSegwitSighashFlags(flags, vin.witness);
       } else if (vin.scriptsig?.length) {

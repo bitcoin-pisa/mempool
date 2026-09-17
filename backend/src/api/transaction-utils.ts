@@ -474,6 +474,7 @@ class TransactionUtils {
       'witness_v0_keyhash': 'v0_p2wpkh',
       'witness_v0_scripthash': 'v0_p2wsh',
       'witness_v1_taproot': 'v1_p2tr',
+      'witness_v2_cisa': 'v2_p2cisa',
       'nonstandard': 'nonstandard',
       'multisig': 'multisig',
       'anchor': 'anchor',

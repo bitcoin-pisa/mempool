@@ -3,6 +3,7 @@ import { ScriptInfo } from '@app/shared/script.utils';
 import { Vin, Vout } from '@interfaces/electrs.interface';
 import { BECH32_CHARS_LW, BASE58_CHARS, HEX_CHARS } from '@app/shared/regex.utils';
 import { parseTaproot } from './transaction.utils';
+import { CISA_SCRIPT_TYPE, cisaAddressLeadingChar } from '@app/shared/cisa.utils';
 
 export type AddressType = 'fee'
   | 'empty'
@@ -17,6 +18,7 @@ export type AddressType = 'fee'
   | 'v0_p2wpkh'
   | 'v0_p2wsh'
   | 'v1_p2tr'
+  | 'v2_p2cisa'
   | 'confidential'
   | 'anchor'
   | 'unknown'
@@ -83,6 +85,8 @@ const confidentialb58Regex = RegExp('^[TJ]' + BASE58_CHARS + '{78}$');
 const p2wpkhRegex = RegExp('^q' + BECH32_CHARS_LW + '{38}$');
 const p2wshRegex = RegExp('^q' + BECH32_CHARS_LW + '{58}$');
 const p2trRegex = RegExp('^p' + BECH32_CHARS_LW + '{58}$');
+// witness version 2 by default, see cisa.utils
+const cisaRegex = RegExp('^' + cisaAddressLeadingChar() + BECH32_CHARS_LW + '{58}$');
 const pubkeyRegex = RegExp('^' + `(04${HEX_CHARS}{128})|(0[23]${HEX_CHARS}{64})$`);
 
 export function detectAddressType(address: string, network: string): AddressType {
@@ -101,6 +105,8 @@ export function detectAddressType(address: string, network: string): AddressType
       return 'v0_p2wsh';
     } else if (p2trRegex.test(suffix)) {
       return 'v1_p2tr';
+    } else if (cisaRegex.test(suffix)) {
+      return CISA_SCRIPT_TYPE;
     }
   }
 

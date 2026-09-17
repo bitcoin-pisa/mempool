@@ -192,9 +192,20 @@
                                 <span class="script" ngbTooltip="script">
                                   <fa-icon [icon]="['fas', 'code']" [fixedWidth]="true"></fa-icon>
                                 </span>
-                              } @else if (windex === vin.taprootInfo?.annexIndex) {
+                              } @else if (windex === vin.taprootInfo?.annexIndex || windex === vin.cisaInfo?.annexIndex) {
                                 <span class="annex" ngbTooltip="annex">
                                   <fa-icon [icon]="['fas', 'paperclip']" [fixedWidth]="true"></fa-icon>
+                                </span>
+                              } @else if (vin.cisaInfo && windex === vin.cisaInfo.elementIndex) {
+                                <span class="cisa-role cisa-{{ vin.cisaInfo.role }}" [ngbTooltip]="cisaRoleLabels[vin.cisaInfo.role]">
+                                  @switch (vin.cisaInfo.role) {
+                                    @case ('fullagg_final') { aggregate signature }
+                                    @case ('fullagg_member') { aggregated }
+                                    @case ('halfagg_final') { half-aggregate signature }
+                                    @case ('halfagg_member') { nonce share }
+                                    @case ('opted_out') { opted out }
+                                    @default { invalid }
+                                  }
                                 </span>
                               }
                               @if (windex !== vin.taprootInfo?.controlBlockIndex) {

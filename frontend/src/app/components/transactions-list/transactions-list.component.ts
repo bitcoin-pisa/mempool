@@ -18,6 +18,7 @@ import { ADDRESS_SIMILARITY_THRESHOLD, AddressMatch, AddressSimilarity, AddressT
 import { processInputSignatures, Sighash, SigInfo, SighashLabels, parseTaproot } from '@app/shared/transaction.utils';
 import { ActivatedRoute } from '@angular/router';
 import { SighashFlag } from '@app/shared/transaction.utils';
+import { CISA_SCRIPT_TYPE, CisaRoleLabels, parseCisa } from '@app/shared/cisa.utils';
 
 @Component({
   selector: 'app-transactions-list',
@@ -76,6 +77,7 @@ export class TransactionsListComponent implements OnInit, OnChanges, OnDestroy {
   selectedSig: { txIndex: number, vindex: number, sig: SigInfo } | null = null;
   sigHighlights: { vin: boolean[], vout: boolean[] } = { vin: [], vout: [] };
   sighashLabels = SighashLabels;
+  cisaRoleLabels = CisaRoleLabels;
 
   signaturesPreference: SignaturesMode = null;
   signaturesOverride: SignaturesMode = null;
@@ -326,9 +328,11 @@ export class TransactionsListComponent implements OnInit, OnChanges, OnDestroy {
           }
           tx['_showSignatures'] = this.shouldShowSignatures(tx);
         }
-        // parse taproot spends
+        // parse taproot and signature aggregation spends
         for (const vin of tx.vin) {
-          if (vin.prevout?.scriptpubkey_type === 'v1_p2tr') {
+          if (vin.prevout?.scriptpubkey_type === CISA_SCRIPT_TYPE) {
+            vin.cisaInfo = parseCisa(vin.witness);
+          } else if (vin.prevout?.scriptpubkey_type === 'v1_p2tr') {
             vin.taprootInfo = parseTaproot(vin.witness);
             if (this.stateService.network !== 'liquid' && this.stateService.network !== 'liquidtestnet') {
               if (vin.taprootInfo?.scriptPath?.script.includes('0063036f7264')) {

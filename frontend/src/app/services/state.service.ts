@@ -92,6 +92,7 @@ export interface Env {
   TWIDGET_API?: string;
   customize?: Customization;
   PROD_DOMAINS: string[];
+  CISA_WITNESS_VERSION?: number;
 }
 
 const defaultEnv: Env = {
@@ -104,6 +105,7 @@ const defaultEnv: Env = {
   'LIQUID_TESTNET_ENABLED': false,
   'BASE_MODULE': 'mempool',
   'ROOT_NETWORK': '',
+  'CISA_WITNESS_VERSION': 2,
   'ITEMS_PER_PAGE': 10,
   'KEEP_BLOCKS_AMOUNT': 8,
   'OFFICIAL_MEMPOOL_SPACE': false,

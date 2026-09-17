@@ -1,6 +1,7 @@
 import { Price } from '@app/services/price.service';
 import { IChannel } from '@interfaces/node-api.interface';
 import { ParsedTaproot } from '../shared/transaction.utils';
+import { ParsedCisa } from '../shared/cisa.utils';
 
 export interface Transaction {
   txid: string;
@@ -83,6 +84,8 @@ export interface Vin {
   inner_simplicityscript?: string;
   // parsed taproot info
   taprootInfo?: ParsedTaproot;
+  // parsed BIP 460 witness info
+  cisaInfo?: ParsedCisa;
 }
 
 interface Issuance {
