@@ -3,6 +3,27 @@ export type PayjoinOwner = 'sender' | 'recipient';
 export interface PayjoinOwnership {
   inputs: PayjoinOwner[];
   outputs: PayjoinOwner[];
+  /** names for the two parties, when the fragment gives them */
+  labels: Record<PayjoinOwner, string | null>;
+}
+
+const MAX_LABEL_LENGTH = 24;
+
+const DEFAULT_LABELS: Record<PayjoinOwner, string> = {
+  sender: 'Sender',
+  recipient: 'Recipient',
+};
+
+/** What to call a party: its name from the fragment, or its role. */
+export function payjoinOwnerLabel(ownership: PayjoinOwnership | null, owner: PayjoinOwner): string {
+  return ownership?.labels?.[owner] || DEFAULT_LABELS[owner];
+}
+
+/** A display name from the fragment, or null if it is empty or unusable. */
+function parseLabel(value: string | undefined): string | null {
+  // eslint-disable-next-line no-control-regex
+  const label = value?.replace(/[\u0000-\u001f\u007f]/g, '').trim();
+  return label ? label.slice(0, MAX_LABEL_LENGTH) : null;
 }
 
 interface PayjoinIndexedValue {
@@ -96,6 +117,12 @@ const OWNERSHIP_CODES: Record<string, PayjoinOwner> = {
   r: 'recipient',
 };
 
+/**
+ * Read the `pj` fragment parameter: a version, one code per input, one code
+ * per output, and optionally the sender's and the recipient's names, all
+ * separated by colons. `1:ssr:rs` marks two sender inputs and one recipient
+ * input; `1:ssr:rs:Alice:Bob` also names them. Names cannot contain a colon.
+ */
 export function parsePayjoinOwnership(
   value: string | null,
   inputCount: number,
@@ -106,7 +133,7 @@ export function parsePayjoinOwnership(
   }
 
   const parts = value.split(':');
-  if (parts.length !== 3 || parts[0] !== '1') {
+  if (parts.length < 3 || parts.length > 5 || parts[0] !== '1') {
     return null;
   }
 
@@ -125,5 +152,9 @@ export function parsePayjoinOwnership(
   return {
     inputs: inputCodes.map((code) => OWNERSHIP_CODES[code]),
     outputs: outputCodes.map((code) => OWNERSHIP_CODES[code]),
+    labels: {
+      sender: parseLabel(parts[3]),
+      recipient: parseLabel(parts[4]),
+    },
   };
 }

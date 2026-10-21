@@ -123,13 +123,8 @@
                   </div>
                   @if (payjoinOwnership?.inputs[vindex]; as owner) {
                     <div>
-                      <span class="badge payjoin-owner mt-1" [class.sender]="owner === 'sender'" [class.recipient]="owner === 'recipient'">
-                        @if (owner === 'sender') {
-                          <ng-container i18n="transactions-list.payjoin-sender">Sender</ng-container>
-                        } @else {
-                          <ng-container i18n="transactions-list.payjoin-recipient">Recipient</ng-container>
-                        }
-                      </span>
+                      <span class="badge payjoin-owner mt-1" [class.sender]="owner === 'sender'" [class.recipient]="owner === 'recipient'"
+                            [ngbTooltip]="owner === 'sender' ? 'Payjoin sender' : 'Payjoin recipient'" placement="bottom">{{ ownerLabel(owner) }}</span>
                     </div>
                   }
                 </td>
@@ -371,13 +366,8 @@
                   </div>
                   @if (payjoinOwnership?.outputs[vindex]; as owner) {
                     <div>
-                      <span class="badge payjoin-owner mt-1" [class.sender]="owner === 'sender'" [class.recipient]="owner === 'recipient'">
-                        @if (owner === 'sender') {
-                          <ng-container i18n="transactions-list.payjoin-sender">Sender</ng-container>
-                        } @else {
-                          <ng-container i18n="transactions-list.payjoin-recipient">Recipient</ng-container>
-                        }
-                      </span>
+                      <span class="badge payjoin-owner mt-1" [class.sender]="owner === 'sender'" [class.recipient]="owner === 'recipient'"
+                            [ngbTooltip]="owner === 'sender' ? 'Payjoin sender' : 'Payjoin recipient'" placement="bottom">{{ ownerLabel(owner) }}</span>
                     </div>
                   }
                   <ng-template #scriptpubkey_type>

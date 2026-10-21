@@ -218,8 +218,15 @@
         <h2 i18n="transaction.payjoin|Payjoin transaction summary">Payjoin</h2>
       </div>
       <div class="box payjoin-summary mb-4">
-        <p i18n="transaction.payjoin-actual-amount|Payjoin identification and actual amount received">
-          This transaction is a Payjoin. Actual amount received: <strong><app-amount [satoshis]="calculation.recipientNetGain" [noFiat]="true"></app-amount></strong>
+        <p class="payjoin-received-line">
+          <span id="payjoin-received">
+            @if (payjoinOwnership?.labels?.recipient) {
+              Received by {{ payjoinLabel('recipient') }}
+            } @else {
+              Actual amount received
+            }
+            <strong><app-amount [satoshis]="calculation.recipientNetGain" [noFiat]="true"></app-amount></strong>
+          </span>
         </p>
 
         <details class="payjoin-calculations">
@@ -231,7 +238,7 @@
           <div class="payjoin-calculation-content">
             <div class="payjoin-parties">
               <section class="payjoin-party sender">
-                <h3 i18n="transaction.payjoin-sender|Payjoin sender heading">Sender</h3>
+                <h3>{{ payjoinLabel('sender') }}</h3>
 
                 <h4 i18n="transaction.payjoin-contributed|Payjoin contributed heading">Contributed</h4>
                 <dl class="payjoin-values">
@@ -271,7 +278,7 @@
               </section>
 
               <section class="payjoin-party recipient">
-                <h3 i18n="transaction.payjoin-recipient|Payjoin recipient heading">Recipient</h3>
+                <h3>{{ payjoinLabel('recipient') }}</h3>
 
                 <h4 i18n="transaction.payjoin-contributed|Payjoin contributed heading">Contributed</h4>
                 <dl class="payjoin-values">

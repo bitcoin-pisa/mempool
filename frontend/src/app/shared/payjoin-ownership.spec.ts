@@ -1,6 +1,6 @@
 import { deepStrictEqual, strictEqual } from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { calculatePayjoinDetails, parsePayjoinOwnership } from './payjoin-ownership';
+import { calculatePayjoinDetails, parsePayjoinOwnership, payjoinOwnerLabel } from './payjoin-ownership';
 
 describe('Payjoin ownership', () => {
   it('parses ownership vectors that match the transaction', () => {
@@ -10,7 +10,17 @@ describe('Payjoin ownership', () => {
         'sender', 'sender', 'sender', 'recipient',
       ],
       outputs: ['recipient', 'sender'],
+      labels: { sender: null, recipient: null },
     });
+  });
+
+  it('reads the names of the two parties', () => {
+    deepStrictEqual(parsePayjoinOwnership('1:sr:rs:Alice:Bob', 2, 2)?.labels, { sender: 'Alice', recipient: 'Bob' });
+    deepStrictEqual(parsePayjoinOwnership('1:sr:rs:Alice', 2, 2)?.labels, { sender: 'Alice', recipient: null });
+    deepStrictEqual(parsePayjoinOwnership('1:sr:rs::Bob', 2, 2)?.labels, { sender: null, recipient: 'Bob' });
+    strictEqual(payjoinOwnerLabel(parsePayjoinOwnership('1:sr:rs::Bob', 2, 2), 'sender'), 'Sender');
+    strictEqual(payjoinOwnerLabel(parsePayjoinOwnership('1:sr:rs::Bob', 2, 2), 'recipient'), 'Bob');
+    strictEqual(parsePayjoinOwnership(`1:sr:rs:${'x'.repeat(40)}`, 2, 2)?.labels.sender.length, 24);
   });
 
   it('rejects malformed ownership vectors', () => {
@@ -23,6 +33,7 @@ describe('Payjoin ownership', () => {
       ['1:sr:rs', 2, 1],
       ['1:ss:rs', 2, 2],
       ['1:rr:rs', 2, 2],
+      ['1:sr:rs:Alice:Bob:Carol', 2, 2],
     ];
 
     for (const [value, inputCount, outputCount] of invalidVectors) {

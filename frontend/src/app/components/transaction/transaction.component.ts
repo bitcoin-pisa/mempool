@@ -39,7 +39,7 @@ import { PartnerCodeService } from '@app/services/partner-code.service';
 import { ZONE_SERVICE } from '@app/injection-tokens';
 import { MiningService, MiningStats } from '@app/services/mining.service';
 import { ETA, EtaService } from '@app/services/eta.service';
-import { calculatePayjoinDetails, parsePayjoinOwnership, PayjoinCalculation, PayjoinOwnership } from '@app/shared/payjoin-ownership';
+import { calculatePayjoinDetails, parsePayjoinOwnership, PayjoinCalculation, PayjoinOwner, PayjoinOwnership, payjoinOwnerLabel } from '@app/shared/payjoin-ownership';
 
 export interface Pool {
   id: number;
@@ -1244,6 +1244,10 @@ export class TransactionComponent implements OnInit, AfterViewInit, OnDestroy {
         this.firstFragmentScroll = false;
       }
     }
+  }
+
+  payjoinLabel(owner: PayjoinOwner): string {
+    return payjoinOwnerLabel(this.payjoinOwnership, owner);
   }
 
   private updatePayjoinOwnership(): void {

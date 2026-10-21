@@ -19,7 +19,7 @@ import { processInputSignatures, Sighash, SigInfo, SighashLabels, parseTaproot }
 import { ActivatedRoute } from '@angular/router';
 import { SighashFlag } from '@app/shared/transaction.utils';
 import { CISA_SCRIPT_TYPE, CisaRoleLabels, parseCisa } from '@app/shared/cisa.utils';
-import { PayjoinOwnership } from '@app/shared/payjoin-ownership';
+import { PayjoinOwner, PayjoinOwnership, payjoinOwnerLabel } from '@app/shared/payjoin-ownership';
 
 @Component({
   selector: 'app-transactions-list',
@@ -98,6 +98,11 @@ export class TransactionsListComponent implements OnInit, OnChanges, OnDestroy {
     private route: ActivatedRoute,
   ) {
     this.signaturesMode = this.forceSignaturesMode || this.stateService.signaturesMode$.value;
+  }
+
+  /** What to call a payjoin party: its name from the fragment, or its role. */
+  ownerLabel(owner: PayjoinOwner): string {
+    return payjoinOwnerLabel(this.payjoinOwnership, owner);
   }
 
   ngOnInit(): void {
