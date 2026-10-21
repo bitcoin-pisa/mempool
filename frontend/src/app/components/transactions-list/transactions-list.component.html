@@ -58,7 +58,10 @@
                 @if (tx['_showSignatures']) {
                   <td class="sig-td">
                     <div class="sig-stack">
-                      @if (!tx['_sigs']?.[vindex]?.length) {
+                      @if (vin.cisaInfo) {
+                        <!-- The signature parser does not read BIP 460 witnesses, and would
+                             call every CISA input unsigned; the witness says what they carry. -->
+                      } @else if (!tx['_sigs']?.[vindex]?.length) {
                         <span class="sig sig-key sig-no-lock" ngbTooltip="unsigned">
                           <fa-icon [icon]="['fas', 'lock-open']" [fixedWidth]="true"></fa-icon>
                         </span>
@@ -118,6 +121,12 @@
                       </ng-template>
                     </ng-container>
                   </div>
+                  @if (payjoinOwnership?.inputs[vindex]; as owner) {
+                    <div>
+                      <span class="badge payjoin-owner mt-1" [class.sender]="owner === 'sender'" [class.recipient]="owner === 'recipient'"
+                            [ngbTooltip]="owner === 'sender' ? 'Payjoin sender' : 'Payjoin recipient'" placement="bottom">{{ ownerLabel(owner) }}</span>
+                    </div>
+                  }
                 </td>
                 <td class="text-end nowrap amount" [class]="{large: tx.largeInput}">
                   <button *ngIf="vin.isInscription" (click)="toggleOrdData(tx.txid, 'vin', vindex)" type="button" class="btn btn-sm badge badge-ord primary" style="margin-right: 10px;" i18n="transaction.inscription-tag">Inscription</button>
@@ -192,9 +201,20 @@
                                 <span class="script" ngbTooltip="script">
                                   <fa-icon [icon]="['fas', 'code']" [fixedWidth]="true"></fa-icon>
                                 </span>
-                              } @else if (windex === vin.taprootInfo?.annexIndex) {
+                              } @else if (windex === vin.taprootInfo?.annexIndex || windex === vin.cisaInfo?.annexIndex) {
                                 <span class="annex" ngbTooltip="annex">
                                   <fa-icon [icon]="['fas', 'paperclip']" [fixedWidth]="true"></fa-icon>
+                                </span>
+                              } @else if (vin.cisaInfo && windex === vin.cisaInfo.elementIndex) {
+                                <span class="cisa-role cisa-{{ vin.cisaInfo.role }}" [ngbTooltip]="cisaRoleLabels[vin.cisaInfo.role]">
+                                  @switch (vin.cisaInfo.role) {
+                                    @case ('fullagg_final') { aggregate signature }
+                                    @case ('fullagg_member') { aggregated }
+                                    @case ('halfagg_final') { half-aggregate signature }
+                                    @case ('halfagg_member') { nonce share }
+                                    @case ('opted_out') { opted out }
+                                    @default { invalid }
+                                  }
                                 </span>
                               }
                               @if (windex !== vin.taprootInfo?.controlBlockIndex) {
@@ -344,6 +364,12 @@
                   <div>
                     <app-address-labels [vout]="vout" [channel]="tx._channels && tx._channels.outputs[vindex] ? tx._channels.outputs[vindex] : null"></app-address-labels>
                   </div>
+                  @if (payjoinOwnership?.outputs[vindex]; as owner) {
+                    <div>
+                      <span class="badge payjoin-owner mt-1" [class.sender]="owner === 'sender'" [class.recipient]="owner === 'recipient'"
+                            [ngbTooltip]="owner === 'sender' ? 'Payjoin sender' : 'Payjoin recipient'" placement="bottom">{{ ownerLabel(owner) }}</span>
+                    </div>
+                  }
                   <ng-template #scriptpubkey_type>
                     <ng-template [ngIf]="vout.pegout" [ngIfElse]="defaultscriptpubkey_type">
                       <ng-container i18n="transactions-list.peg-out-to">Peg-out to <ng-container *ngTemplateOutlet="pegOutLink"></ng-container></ng-container>

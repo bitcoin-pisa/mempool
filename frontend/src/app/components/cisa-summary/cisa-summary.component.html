@@ -1,0 +1,63 @@
+<div class="title float-start">
+  <h2 id="signature-aggregation" class="anchor">Signature Aggregation</h2>
+</div>
+<div class="clearfix"></div>
+
+<div class="box cisa-summary">
+  <div class="stats">
+    <div class="item" id="cisa-inputs">
+      <h5 class="card-title">Inputs</h5>
+      <div class="card-text">{{ savings.signaturesWithout }}</div>
+    </div>
+    <div class="item" id="cisa-signatures">
+      <h5 class="card-title">Signatures</h5>
+      <div class="card-text">{{ savings.signatures }}</div>
+    </div>
+    <div class="item" id="cisa-size">
+      <h5 class="card-title">Size saved</h5>
+      <div class="card-text good">{{ savings.savedVb | number }} <span class="symbol">vB</span></div>
+      <div class="sub">{{ savings.percent | number: '1.1-1' }}%</div>
+    </div>
+    <div class="item" id="cisa-fee">
+      <h5 class="card-title">Fee saved</h5>
+      <div class="card-text good">{{ savings.feeSaved | number }} <span class="symbol">sats</span></div>
+      <div class="sub">{{ savings.feeRate | number: '1.1-1' }} sat/vB</div>
+    </div>
+  </div>
+
+  <div class="inputs">
+    @for (input of savings.inputs; track input.index) {
+      <div class="slot-row" [attr.data-role]="input.role" id="cisa-input-{{ input.index }}">
+        <span class="who">
+          @if (owner(input); as owner) {
+            <span class="badge payjoin-owner" [class.sender]="owner === 'sender'" [class.recipient]="owner === 'recipient'">{{ ownerLabel(owner) }}</span>
+          } @else {
+            #{{ input.index }}
+          }
+        </span>
+        <div class="slot">
+          @switch (input.role) {
+            @case ('fullagg_member') {
+              <div class="ghost" [style.width.%]="width(input.plainBytes)">empty (covered by aggregate)</div>
+            }
+            @case ('halfagg_member') {
+              <div class="sig partial" [style.width.%]="width(input.bytes)">nonce</div>
+              <div class="ghost rest" [style.width.%]="width(saved(input))"></div>
+            }
+            @case ('fullagg_final') {
+              <div class="sig aggregate" [style.width.%]="width(input.bytes)">aggregate signature</div>
+            }
+            @case ('halfagg_final') {
+              <div class="sig aggregate" [style.width.%]="width(input.bytes)">aggregate signature</div>
+            }
+            @default {
+              <div class="sig plain" [style.width.%]="width(input.bytes)">signature</div>
+            }
+          }
+        </div>
+        <span class="bytes">{{ input.bytes }} B</span>
+      </div>
+    }
+  </div>
+</div>
+<br>

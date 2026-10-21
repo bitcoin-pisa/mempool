@@ -12,6 +12,7 @@ import { AccelerateCheckout } from '@components/accelerate-checkout/accelerate-c
 import { AccelerateFeeGraphComponent } from '@components/accelerate-checkout/accelerate-fee-graph.component';
 import { TransactionRawComponent } from '@components/transaction/transaction-raw.component';
 import { CpfpInfoComponent } from '@components/transaction/cpfp-info.component';
+import { CisaSummaryComponent } from '@components/cisa-summary/cisa-summary.component';
 import { ClusterDiagramComponent } from '@components/cluster-diagram/cluster-diagram.component';
 
 const routes: Routes = [
@@ -68,6 +69,7 @@ export class TransactionRoutingModule { }
     TransactionRawComponent,
     CpfpInfoComponent,
     ClusterDiagramComponent,
+    CisaSummaryComponent,
   ],
   exports: [
     TransactionComponent,

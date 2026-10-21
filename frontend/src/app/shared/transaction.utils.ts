@@ -6,6 +6,7 @@ import { StateService } from '@app/services/state.service';
 import { hash, Hash } from '@app/shared/sha256';
 import { AddressType, AddressTypeInfo, detectAddressType } from '@app/shared/address-utils';
 import * as secp256k1 from '@noble/secp256k1';
+import { CISA_SCRIPT_TYPE, cisaProgramFromScriptPubKey, cisaScriptPubKeyRegex, cisaWitnessVersion, setCisaSighashFlags } from '@app/shared/cisa.utils';
 
 // Bitcoin Core default policy settings
 const MAX_STANDARD_TX_WEIGHT = 400_000;
@@ -841,6 +842,12 @@ export function getTransactionFlags(tx: Transaction, cpfpInfo?: CpfpInfo, replac
       case 'p2sh': flags |= TransactionFlags.p2sh; break;
       case 'v0_p2wpkh': flags |= TransactionFlags.p2wpkh; break;
       case 'v0_p2wsh': flags |= TransactionFlags.p2wsh; break;
+      case CISA_SCRIPT_TYPE: {
+        flags |= TransactionFlags.p2cisa;
+        if (vin.witness?.length > 1 && vin.witness[vin.witness.length - 1].startsWith('50')) {
+          flags |= TransactionFlags.annex;
+        }
+      } break;
       case 'v1_p2tr': {
         flags |= TransactionFlags.p2tr;
         // every valid taproot input has at least one witness item, however transactions
@@ -866,6 +873,8 @@ export function getTransactionFlags(tx: Transaction, cpfpInfo?: CpfpInfo, replac
     // sighash flags
     if (vin.prevout?.scriptpubkey_type === 'v1_p2tr') {
       flags |= setSchnorrSighashFlags(flags, vin.witness);
+    } else if (vin.prevout?.scriptpubkey_type === CISA_SCRIPT_TYPE) {
+      flags |= setCisaSighashFlags(flags, vin.witness);
     } else if (vin.witness) {
       flags |= setSegwitSighashFlags(flags, vin.witness);
     } else if (vin.scriptsig?.length) {
@@ -1969,6 +1978,10 @@ export function scriptPubKeyToAddress(scriptPubKey: string, network: string): { 
   if (/^5120[0-9a-f]{64}$/.test(scriptPubKey)) {
     return { address: p2tr(scriptPubKey.substring(4, 4 + 64), network), type: 'v1_p2tr' };
   }
+  // BIP 460 key path output
+  if (cisaScriptPubKeyRegex().test(scriptPubKey)) {
+    return { address: witnessProgramAddress(cisaProgramFromScriptPubKey(scriptPubKey), cisaWitnessVersion(), network), type: CISA_SCRIPT_TYPE };
+  }
   // multisig
   if (/^[0-9a-f]+ae$/.test(scriptPubKey)) {
     return { address: null, type: 'multisig' };
@@ -2057,6 +2070,14 @@ function p2tr(pubKey: string, network: string): string {
   const words = [version].concat(toWords(pubkeyArray));
   const bech32Address = bech32Encode(hrp, words, 'bech32m');
   return bech32Address;
+}
+
+/** bech32m address of a witness program with version 1 or higher. */
+function witnessProgramAddress(program: string, version: number, network: string): string {
+  const programArray = hexStringToUint8Array(program);
+  const hrp = ['testnet', 'testnet4', 'signet'].includes(network) ? 'tb' : (network === 'regtest' ? 'bcrt' : 'bc');
+  const words = [version].concat(toWords(programArray));
+  return bech32Encode(hrp, words, 'bech32m');
 }
 
 function p2a(network: string): string {

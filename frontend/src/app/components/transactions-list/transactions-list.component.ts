@@ -18,6 +18,8 @@ import { ADDRESS_SIMILARITY_THRESHOLD, AddressMatch, AddressSimilarity, AddressT
 import { processInputSignatures, Sighash, SigInfo, SighashLabels, parseTaproot } from '@app/shared/transaction.utils';
 import { ActivatedRoute } from '@angular/router';
 import { SighashFlag } from '@app/shared/transaction.utils';
+import { CISA_SCRIPT_TYPE, CisaRoleLabels, parseCisa } from '@app/shared/cisa.utils';
+import { PayjoinOwner, PayjoinOwnership, payjoinOwnerLabel } from '@app/shared/payjoin-ownership';
 
 @Component({
   selector: 'app-transactions-list',
@@ -40,6 +42,7 @@ export class TransactionsListComponent implements OnInit, OnChanges, OnDestroy {
   @Input() paginated = false;
   @Input() inputIndex: number;
   @Input() outputIndex: number;
+  @Input() payjoinOwnership: PayjoinOwnership | null = null;
   @Input() addresses: string[] = [];
   @Input() acceleratedTxids: Set<string> | null = null;
   @Input() rowLimit = 12;
@@ -76,6 +79,7 @@ export class TransactionsListComponent implements OnInit, OnChanges, OnDestroy {
   selectedSig: { txIndex: number, vindex: number, sig: SigInfo } | null = null;
   sigHighlights: { vin: boolean[], vout: boolean[] } = { vin: [], vout: [] };
   sighashLabels = SighashLabels;
+  cisaRoleLabels = CisaRoleLabels;
 
   signaturesPreference: SignaturesMode = null;
   signaturesOverride: SignaturesMode = null;
@@ -94,6 +98,11 @@ export class TransactionsListComponent implements OnInit, OnChanges, OnDestroy {
     private route: ActivatedRoute,
   ) {
     this.signaturesMode = this.forceSignaturesMode || this.stateService.signaturesMode$.value;
+  }
+
+  /** What to call a payjoin party: its name from the fragment, or its role. */
+  ownerLabel(owner: PayjoinOwner): string {
+    return payjoinOwnerLabel(this.payjoinOwnership, owner);
   }
 
   ngOnInit(): void {
@@ -326,9 +335,11 @@ export class TransactionsListComponent implements OnInit, OnChanges, OnDestroy {
           }
           tx['_showSignatures'] = this.shouldShowSignatures(tx);
         }
-        // parse taproot spends
+        // parse taproot and signature aggregation spends
         for (const vin of tx.vin) {
-          if (vin.prevout?.scriptpubkey_type === 'v1_p2tr') {
+          if (vin.prevout?.scriptpubkey_type === CISA_SCRIPT_TYPE) {
+            vin.cisaInfo = parseCisa(vin.witness);
+          } else if (vin.prevout?.scriptpubkey_type === 'v1_p2tr') {
             vin.taprootInfo = parseTaproot(vin.witness);
             if (this.stateService.network !== 'liquid' && this.stateService.network !== 'liquidtestnet') {
               if (vin.taprootInfo?.scriptPath?.script.includes('0063036f7264')) {

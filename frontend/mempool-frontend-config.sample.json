@@ -15,6 +15,7 @@
   "MEMPOOL_BLOCKS_AMOUNT": 8,
   "BASE_MODULE": "mempool",
   "ROOT_NETWORK": "",
+  "CISA_WITNESS_VERSION": 2,
   "MEMPOOL_WEBSITE_URL": "https://mempool.space",
   "LIQUID_WEBSITE_URL": "https://liquid.network",
   "MINING_DASHBOARD": true,

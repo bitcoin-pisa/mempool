@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, OnChanges, Input } from '@angular/c
 import { calcSegwitFeeGains, isFeatureActive } from '@app/bitcoin.utils';
 import { Transaction } from '@interfaces/electrs.interface';
 import { StateService } from '@app/services/state.service';
+import { CISA_SCRIPT_TYPE } from '@app/shared/cisa.utils';
 
 @Component({
   selector: 'app-tx-features',
@@ -12,6 +13,7 @@ import { StateService } from '@app/services/state.service';
 })
 export class TxFeaturesComponent implements OnChanges {
   @Input() tx: Transaction;
+  @Input() isPayjoin = false;
 
   segwitGains = {
     realizedSegwitGains: 0,
@@ -36,7 +38,11 @@ export class TxFeaturesComponent implements OnChanges {
       return;
     }
     this.segwitEnabled = !this.tx.status.confirmed || isFeatureActive(this.stateService.network, this.tx.status.block_height, 'segwit');
-    this.taprootEnabled = !this.tx.status.confirmed || isFeatureActive(this.stateService.network, this.tx.status.block_height, 'taproot');
+    // BIP 460 spends are witness v2, which the taproot fee-gain heuristics
+    // do not know: they would flag a CISA transaction as one that could have
+    // saved by using taproot, when it is smaller than its taproot equivalent.
+    const spendsCisa = this.tx.vin.some((v) => v.prevout?.scriptpubkey_type === CISA_SCRIPT_TYPE);
+    this.taprootEnabled = !spendsCisa && (!this.tx.status.confirmed || isFeatureActive(this.stateService.network, this.tx.status.block_height, 'taproot'));
     this.rbfEnabled = !this.tx.status.confirmed || isFeatureActive(this.stateService.network, this.tx.status.block_height, 'rbf');
     this.segwitGains = calcSegwitFeeGains(this.tx);
     this.isRbfTransaction = this.tx.vin.some((v) => v.sequence < 0xfffffffe);

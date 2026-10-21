@@ -156,6 +156,19 @@
 	transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
+.cisa-role {
+  display: inline-block;
+  margin-right: 0.5em;
+  padding: 0 0.4em;
+  border-radius: 0.25em;
+  font-size: 0.8em;
+  background: var(--primary);
+  color: var(--white);
+  &.cisa-opted_out, &.cisa-invalid {
+    background: var(--grey);
+  }
+}
+
 .annex, .control-block, .script {
 	margin-right: -5px;
 	position: relative;
@@ -343,6 +356,16 @@ h2 {
 	border: 0;
 	&.primary {
 		--bs-btn-bg: var(--primary);
+	}
+}
+
+.payjoin-owner {
+	&.sender {
+		background-color: #2196f3;
+	}
+
+	&.recipient {
+		background-color: #0e9f7e;
 	}
 }
 

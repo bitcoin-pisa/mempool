@@ -28,6 +28,7 @@ import { SeoService } from '@app/services/seo.service';
 import { StorageService } from '@app/services/storage.service';
 import { seoDescriptionNetwork } from '@app/shared/common.utils';
 import { getTransactionFlags, getUnacceleratedFeeRate } from '@app/shared/transaction.utils';
+import { CisaSavings, cisaSavings } from '@app/shared/cisa.utils';
 import { Filter, TransactionFlags, toFilters } from '@app/shared/filters.utils';
 import { BlockExtended, CpfpInfo, RbfTree, MempoolPosition, DifficultyAdjustment, Acceleration, AccelerationPosition } from '@interfaces/node-api.interface';
 import { LiquidUnblinding } from '@components/transaction/liquid-ublinding';
@@ -39,6 +40,7 @@ import { PartnerCodeService } from '@app/services/partner-code.service';
 import { ZONE_SERVICE } from '@app/injection-tokens';
 import { MiningService, MiningStats } from '@app/services/mining.service';
 import { ETA, EtaService } from '@app/services/eta.service';
+import { calculatePayjoinDetails, parsePayjoinOwnership, PayjoinCalculation, PayjoinOwner, PayjoinOwnership, payjoinOwnerLabel } from '@app/shared/payjoin-ownership';
 
 export interface Pool {
   id: number;
@@ -107,6 +109,8 @@ export class TransactionComponent implements OnInit, AfterViewInit, OnDestroy {
   currencyChangeSubscription: Subscription;
   partnerCodeSubscription: Subscription;
   fragmentParams: URLSearchParams;
+  payjoinOwnership: PayjoinOwnership | null = null;
+  payjoinCalculation: PayjoinCalculation | null = null;
   rbfTransaction: undefined | Transaction;
   replaced: boolean = false;
   rbfReplaces: string[];
@@ -116,6 +120,8 @@ export class TransactionComponent implements OnInit, AfterViewInit, OnDestroy {
   accelerationInfo: Acceleration | null = null;
   sigops: number | null;
   adjustedVsize: number | null;
+  /** what BIP 460 aggregation saved, when the transaction has an aggregation group */
+  cisa: CisaSavings | null = null;
   pool: Pool | null;
   auditStatus: TxAuditStatus | null;
   isAcceleration: boolean = false;
@@ -361,6 +367,7 @@ export class TransactionComponent implements OnInit, AfterViewInit, OnDestroy {
 
       if (!this.tx) {
         this.tx = tx;
+        this.updatePayjoinOwnership();
         this.setFeatures();
         this.isCached = true;
         if (tx.fee === undefined) {
@@ -689,6 +696,7 @@ export class TransactionComponent implements OnInit, AfterViewInit, OnDestroy {
           this.seoService.clearSoft404();
 
           this.tx = tx;
+          this.updatePayjoinOwnership();
           this.setFeatures();
           this.isCached = false;
           if (tx.fee === undefined) {
@@ -995,6 +1003,7 @@ export class TransactionComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   setFeatures(): void {
+    this.cisa = this.tx ? cisaSavings(this.tx) : null;
     if (this.tx) {
       this.segwitEnabled = !this.tx.status.confirmed || isFeatureActive(this.stateService.network, this.tx.status.block_height, 'segwit');
       this.taprootEnabled = !this.tx.status.confirmed || isFeatureActive(this.stateService.network, this.tx.status.block_height, 'taproot');
@@ -1084,6 +1093,8 @@ export class TransactionComponent implements OnInit, AfterViewInit, OnDestroy {
     this.gotInitialPosition = false;
     this.error = undefined;
     this.tx = null;
+    this.payjoinOwnership = null;
+    this.payjoinCalculation = null;
     this.txChanged$.next(true);
     this.setFeatures();
     this.waitingForTransaction = false;
@@ -1213,6 +1224,7 @@ export class TransactionComponent implements OnInit, AfterViewInit, OnDestroy {
     const anchor = Array.from(this.fragmentParams.entries()).find(([, value]) => value === '')?.[0] || null;
     this.inputIndex = inputIndex;
     this.outputIndex = outputIndex;
+    this.updatePayjoinOwnership();
     if (this.fragmentParams.has('accelerate')) {
       this.forceAccelerationSummary = true;
     }
@@ -1236,6 +1248,23 @@ export class TransactionComponent implements OnInit, AfterViewInit, OnDestroy {
         this.firstFragmentScroll = false;
       }
     }
+  }
+
+  payjoinLabel(owner: PayjoinOwner): string {
+    return payjoinOwnerLabel(this.payjoinOwnership, owner);
+  }
+
+  private updatePayjoinOwnership(): void {
+    this.payjoinOwnership = this.tx
+      ? parsePayjoinOwnership(this.fragmentParams?.get('pj'), this.tx.vin.length, this.tx.vout.length)
+      : null;
+    this.payjoinCalculation = this.tx && this.payjoinOwnership
+      ? calculatePayjoinDetails(
+          this.tx.vin.map((vin) => vin.prevout?.value),
+          this.tx.vout.map((vout) => vout.value),
+          this.payjoinOwnership,
+        )
+      : null;
   }
 
   setHasAccelerationDetails(hasDetails: boolean): void {

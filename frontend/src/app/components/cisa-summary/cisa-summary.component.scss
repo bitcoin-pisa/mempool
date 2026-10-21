@@ -1,0 +1,111 @@
+.cisa-summary {
+  padding-top: 18px;
+  padding-bottom: 18px;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-around;
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto 18px;
+  .item {
+    flex: 1;
+    max-width: 220px;
+  }
+  .card-title {
+    color: var(--title-fg);
+    font-size: 1rem;
+  }
+  .card-text {
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.2;
+    &.good {
+      color: var(--green);
+    }
+    .symbol {
+      font-size: 15px;
+    }
+  }
+  .sub {
+    font-size: 13px;
+    color: var(--transparent-fg);
+  }
+}
+
+.inputs {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.slot-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 64px;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+.who {
+  text-align: right;
+  color: var(--transparent-fg);
+  .badge {
+    font-size: 14px;
+  }
+}
+
+.payjoin-owner {
+  &.sender {
+    background-color: #2196f3;
+  }
+  &.recipient {
+    background-color: #0e9f7e;
+  }
+}
+
+.slot {
+  display: flex;
+  height: 32px;
+}
+
+.sig, .ghost {
+  height: 100%;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sig {
+  color: var(--white);
+  &.aggregate {
+    background: var(--primary);
+  }
+  &.plain {
+    background: var(--grey);
+  }
+  &.partial {
+    background: var(--primary);
+    border-radius: 6px 0 0 6px;
+  }
+}
+
+.ghost {
+  border: 2px dashed var(--grey);
+  color: var(--transparent-fg);
+  &.rest {
+    border-left: none;
+    border-radius: 0 6px 6px 0;
+    padding: 0;
+  }
+}
+
+.bytes {
+  font-size: 14px;
+  color: var(--transparent-fg);
+  white-space: nowrap;
+}
