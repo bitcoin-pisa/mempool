@@ -28,6 +28,7 @@ import { SeoService } from '@app/services/seo.service';
 import { StorageService } from '@app/services/storage.service';
 import { seoDescriptionNetwork } from '@app/shared/common.utils';
 import { getTransactionFlags, getUnacceleratedFeeRate } from '@app/shared/transaction.utils';
+import { CisaSavings, cisaSavings } from '@app/shared/cisa.utils';
 import { Filter, TransactionFlags, toFilters } from '@app/shared/filters.utils';
 import { BlockExtended, CpfpInfo, RbfTree, MempoolPosition, DifficultyAdjustment, Acceleration, AccelerationPosition } from '@interfaces/node-api.interface';
 import { LiquidUnblinding } from '@components/transaction/liquid-ublinding';
@@ -119,6 +120,8 @@ export class TransactionComponent implements OnInit, AfterViewInit, OnDestroy {
   accelerationInfo: Acceleration | null = null;
   sigops: number | null;
   adjustedVsize: number | null;
+  /** what BIP 460 aggregation saved, when the transaction has an aggregation group */
+  cisa: CisaSavings | null = null;
   pool: Pool | null;
   auditStatus: TxAuditStatus | null;
   isAcceleration: boolean = false;
@@ -1000,6 +1003,7 @@ export class TransactionComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   setFeatures(): void {
+    this.cisa = this.tx ? cisaSavings(this.tx) : null;
     if (this.tx) {
       this.segwitEnabled = !this.tx.status.confirmed || isFeatureActive(this.stateService.network, this.tx.status.block_height, 'segwit');
       this.taprootEnabled = !this.tx.status.confirmed || isFeatureActive(this.stateService.network, this.tx.status.block_height, 'taproot');

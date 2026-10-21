@@ -157,6 +157,10 @@
       <br>
     </ng-container>
 
+    @if (cisa) {
+      <app-cisa-summary [savings]="cisa" [ownership]="payjoinOwnership"></app-cisa-summary>
+    }
+
     <ng-container *ngIf="flowEnabled; else flowPlaceholder">
       <div class="title float-start">
         <h2 id="flow" #flow class="anchor" i18n="transaction.flow|Transaction flow">Flow</h2>
@@ -364,6 +368,16 @@
                 <td i18n="block.weight">Weight</td>
                 <td [innerHTML]="'&lrm;' + (tx.weight | wuBytes: 2)"></td>
               </tr>
+              @if (cisa) {
+                <tr id="cisa-weight-without">
+                  <td>Weight without aggregation</td>
+                  <td [innerHTML]="'&lrm;' + (cisa.weightWithout | wuBytes: 2)"></td>
+                </tr>
+                <tr id="cisa-saved">
+                  <td>Aggregation savings</td>
+                  <td class="cisa-saved">{{ cisa.savedVb | number }} vB, {{ cisa.feeSaved | number }} sats</td>
+                </tr>
+              }
             </tbody>
           </table>
         </div>

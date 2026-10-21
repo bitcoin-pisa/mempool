@@ -1,4 +1,5 @@
 import { TransactionFlags } from '@app/shared/filters.utils';
+import type { Transaction, Vin } from '@interfaces/electrs.interface';
 
 /**
  * BIP 460: cross-input signature aggregation for key path spends of a
@@ -54,6 +55,15 @@ export interface ParsedCisa {
   sighash?: string;
   annex?: string;
   annexIndex?: number;
+}
+
+/** Inputs that share one aggregate signature. */
+export interface CisaGroup {
+  mode: 'full' | 'half';
+  /** input indexes of the group, in transaction order */
+  inputs: number[];
+  /** the input whose witness carries the aggregate: the group's last */
+  carrier: number;
 }
 
 /**
@@ -114,4 +124,133 @@ export function setCisaSighashFlags(flags: bigint, witness: string[]): bigint {
     case '83': return flags | TransactionFlags.sighash_single | TransactionFlags.sighash_acp;
     default: return flags;
   }
+}
+
+function parsedCisa(vin: Vin): ParsedCisa | null {
+  if (vin.prevout?.scriptpubkey_type !== CISA_SCRIPT_TYPE) {
+    return null;
+  }
+  return vin.cisaInfo ?? parseCisa(vin.witness);
+}
+
+/**
+ * The aggregation groups of a transaction. BIP 460 has at most one group per
+ * mode, and the group's final input, the one carrying the aggregate, is its
+ * last member in input order.
+ */
+export function cisaGroups(vins: Vin[]): CisaGroup[] {
+  const groups: CisaGroup[] = [];
+  for (const mode of ['full', 'half'] as const) {
+    const inputs: number[] = [];
+    let carrier: number | null = null;
+    vins.forEach((vin, index) => {
+      const role = parsedCisa(vin)?.role;
+      if (role === `${mode}agg_member`) {
+        inputs.push(index);
+      } else if (role === `${mode}agg_final`) {
+        inputs.push(index);
+        carrier = index;
+      }
+    });
+    if (carrier !== null && inputs.length) {
+      groups.push({ mode, inputs, carrier });
+    }
+  }
+  return groups;
+}
+
+function elementBytes(vin: Vin, info: ParsedCisa): number {
+  return (vin.witness?.[info.elementIndex]?.length ?? 0) / 2;
+}
+
+/** A BIP 340 signature, with its sighash byte unless that is SIGHASH_DEFAULT. */
+function plainSignatureBytes(info: ParsedCisa): number {
+  return info.sighash ? 65 : 64;
+}
+
+export interface CisaInputCost {
+  index: number;
+  role: CisaRole;
+  /** bytes of the signature element as the transaction carries it */
+  bytes: number;
+  /** bytes the element would take as an ordinary signature of its own */
+  plainBytes: number;
+  group?: CisaGroup;
+}
+
+/** What aggregation saved this transaction, against signing every input on its own. */
+export interface CisaSavings {
+  inputs: CisaInputCost[];
+  groups: CisaGroup[];
+  /** signatures the CISA inputs carry: one per group, one per opted-out input */
+  signatures: number;
+  /** signatures they would carry with every input signed on its own */
+  signaturesWithout: number;
+  savedWu: number;
+  weight: number;
+  weightWithout: number;
+  vsize: number;
+  vsizeWithout: number;
+  savedVb: number;
+  /** share of the unaggregated size saved, in percent */
+  percent: number;
+  /** sat/vB the transaction pays */
+  feeRate: number;
+  /** what the saved weight is worth at that fee rate, in sats */
+  feeSaved: number;
+}
+
+/**
+ * Compare the transaction with the same transaction where every CISA input
+ * carries its own signature. Witness bytes weigh one weight unit each, and
+ * every element here is shorter than 253 bytes, so its length prefix is one
+ * byte either way and only the element itself differs. A full aggregation
+ * member saves its whole 64-byte signature; the group's final input pays one
+ * marker byte more than a plain signature.
+ */
+export function cisaSavings(tx: Transaction): CisaSavings | null {
+  if (!tx?.vin?.length || !tx.weight) {
+    return null;
+  }
+  const groups = cisaGroups(tx.vin);
+  if (!groups.length) {
+    return null;
+  }
+  const inGroup = new Map<number, CisaGroup>();
+  groups.forEach((group) => group.inputs.forEach((index) => inGroup.set(index, group)));
+  const inputs: CisaInputCost[] = [];
+  tx.vin.forEach((vin, index) => {
+    const info = parsedCisa(vin);
+    if (!info || info.role === 'invalid') {
+      return;
+    }
+    inputs.push({
+      index,
+      role: info.role,
+      bytes: elementBytes(vin, info),
+      plainBytes: plainSignatureBytes(info),
+      group: inGroup.get(index),
+    });
+  });
+  const savedWu = inputs.reduce((sum, input) => sum + input.plainBytes - input.bytes, 0);
+  const weight = tx.weight;
+  const weightWithout = weight + savedWu;
+  const vsize = Math.ceil(weight / 4);
+  const vsizeWithout = Math.ceil(weightWithout / 4);
+  const feeRate = tx.fee ? tx.fee / (weight / 4) : 0;
+  return {
+    inputs,
+    groups,
+    signatures: inputs.filter((input) => input.role === 'opted_out').length + groups.length,
+    signaturesWithout: inputs.length,
+    savedWu,
+    weight,
+    weightWithout,
+    vsize,
+    vsizeWithout,
+    savedVb: vsizeWithout - vsize,
+    percent: (savedWu / weightWithout) * 100,
+    feeRate,
+    feeSaved: Math.round((savedWu / 4) * feeRate),
+  };
 }
